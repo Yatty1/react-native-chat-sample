@@ -2,6 +2,8 @@ import React from 'react';
 import {
   View,
   Text,
+  StyleSheet,
+  TouchableOpacity,
   FlatList,
   Animation,
   LayoutAnimation,
@@ -9,40 +11,110 @@ import {
 } from 'react-native';
 import SocketIOClient from 'socket.io-client';
 
-
 export default class ChatRoom extends React.Component {
+
   constructor(props) {
     super(props);
     this.state = {
       messages: [],
+      text: '',
     }
-    const socket = SocketIOClient('http://localhost:3000');
-    socket.on('connect', () => {
-      console.log('connected');
-      socket.emit('join', {room: props.room, name: props.name}, (error) => {
-        console.log(error);
-      })
+    props.socket.emit('join', {room: props.room, name: props.name}, (error) => {
+      console.log(error);
     })
-    socket.on('newMessage', (message) => {
-      console.log(message.text);
+
+    this._onNewMsg();
+  }
+
+  _onNewMsg = () => {
+    this.props.socket.on('newMessage', (message) => {
       this.setState(prevState => ({
         messages: [...prevState.messages, message]
       }));
-    })
-    socket.on('disconnect', () => {
-      console.log('disconnected');
-    })
+      this._scrollToBottom(70);
+    }, () => {});
+  }
+
+  _sendMessage() {
+    this.props.socket.emit('createMessage', {
+      from: this.props.name,
+      text: 'Hello',
+      createdAt: new Date().now
+    }, () => {
+      this._scrollToBottom(50);
+    });
+  }
+  _renderName(name) {
+    return this.props.name !== name ? <Text style={{fontSize: 13, marginLeft: 5}}> {name} </Text> : null;
+  }
+  _scrollToBottom(offset) {
+    const scrollHeight = this.contentHeight - this.scrollViewHeight + offset;
+    if (scrollHeight > 0) {
+      this.flatlist.scrollToOffset({ offset: scrollHeight, animated: true })
+    }
   }
 
   render() {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}} >
-        {
-         this.state.messages.map(message => {
-           return <Text key={message.createdAt}> {message.text} </Text>;
-         })
-        }
+      <View style={{flex: 1, marginTop: 20}}>
+        <FlatList
+          ref={flatlist => this.flatlist = flatlist}
+          data={this.state.messages}
+          keyExtractor={(item, index) => `${item.createdAt}`}
+          onContentSizeChange={(w, h) => this.contentHeight = h}
+          onLayout={ev => this.scrollViewHeight = ev.nativeEvent.layout.height}
+          renderItem={({ item }) => {
+            const cellStyle = {
+              container: {
+                justifyContent: 'center',
+                alignItems: this.props.name === item.from ? 'flex-end' : 'flex-start',
+              },
+              textContainer: {
+                maxWidth: '70%',
+                marginHorizontal: 12,
+                marginVertical: 5,
+                paddingHorizontal: 13,
+                paddingVertical: 8,
+                backgroundColor: this.props.name === item.from ? '#2f73e0' : '#e2e2e2',
+                borderRadius: 10,
+              },
+              text: {
+                color: this.props.name === item.from ? '#ffffff' : '#282828',
+                fontSize: 15,
+              }
+            }
+            return (
+              <View style={cellStyle.container}>
+                {this._renderName(item.from)}
+                <View style={cellStyle.textContainer}>
+                  <Text style={cellStyle.text}> {item.text} </Text>
+                </View>
+              </View>
+            );
+          }}
+        />
+        <TouchableOpacity
+          style={styles.sendBtn}
+          onPress={() => this._sendMessage()}
+        >
+          <Text style={{color: '#fff', fontSize: 18}}> Send Hello </Text>
+        </TouchableOpacity>
       </View>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtn: {
+    width: '100%',
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2f73e0',
+  }
+})

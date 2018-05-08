@@ -20,6 +20,9 @@ export default class App extends React.Component {
       room: "",
       isValid: false,
     }
+    this.socket = SocketIOClient('http://localhost:3000');
+    this.socket.on('connect', () => console.log('connected'));
+    this.socket.on('disconnect', () => console.log('disconnected'));
   }
 
   _checkValidation = () => {
@@ -62,6 +65,7 @@ export default class App extends React.Component {
       <ChatRoom
         name={this.state.name}
         room={this.state.room}
+        socket={this.socket}
       />
     );
   }
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    backgroundColor: '#61c3f4'
+    backgroundColor: '#0f97e0'
   },
   inputText: {
     marginVertical: 10,
@@ -98,10 +102,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
-    backgroundColor: '#eb8b45'
+    backgroundColor: '#c1c1c1'
   },
   btnText: {
     fontSize: 20,
-    color: '#fff',
+    color: '#5b5b5b',
   }
 })
