@@ -17,12 +17,10 @@ export default class ChatRoom extends React.Component {
     super(props);
     this.state = {
       messages: [],
-      text: '',
     }
     props.socket.emit('join', {room: props.room, name: props.name}, (error) => {
       console.log(error);
-    })
-
+    });
     this._onNewMsg();
   }
 
@@ -37,6 +35,7 @@ export default class ChatRoom extends React.Component {
 
   _sendMessage() {
     this.props.socket.emit('createMessage', {
+      room: this.props.room,
       from: this.props.name,
       text: 'Hello',
       createdAt: new Date().now
@@ -60,7 +59,7 @@ export default class ChatRoom extends React.Component {
         <FlatList
           ref={flatlist => this.flatlist = flatlist}
           data={this.state.messages}
-          keyExtractor={(item, index) => `${item.createdAt}`}
+          keyExtractor={(item, index) => `${index}`}
           onContentSizeChange={(w, h) => this.contentHeight = h}
           onLayout={ev => this.scrollViewHeight = ev.nativeEvent.layout.height}
           renderItem={({ item }) => {
