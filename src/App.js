@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-  Platform,
   StyleSheet,
   Text,
   TextInput,
   View,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import SocketIOClient from 'socket.io-client';
 import ChatRoom from './ChatRoom';
@@ -25,9 +25,16 @@ export default class App extends React.Component {
     this.socket.on('disconnect', () => console.log('disconnected'));
   }
 
-  _checkValidation = () => {
-    return this.state.name.length > 0 && this.state.room.length > 0;
+  _join = (callback) => {
+    this.socket.emit('join', {room: this.state.room, name: this.state.name}, (error) => {
+      if(error) {
+        Alert.alert(error);
+        return;
+      }
+      callback(true);
+    });
   }
+
   render() {
     if (!this.state.isValid) {
       return (
@@ -51,9 +58,7 @@ export default class App extends React.Component {
               />
             <TouchableOpacity
               style={styles.submitBtn}
-              onPress={() => {
-                this.setState({ isValid: this._checkValidation()});
-              }}
+              onPress={() => this._join(isValid => this.setState({ isValid }))}
             >
               <Text style={styles.btnText}> Join </Text>
             </TouchableOpacity>

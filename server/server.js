@@ -12,7 +12,6 @@ const generateMessage = (from, text) => {
     createdAt: new Date().now
   }
 }
-
 const isValidString = (str) => {
   return typeof str === 'string' && str.trim().length > 0;
 }
@@ -23,18 +22,19 @@ io.on('connection', (socket) => {
       return callback('Name and Room is required');
     }
     socket.join(params.room);
-    socket.emit('newMessage', generateMessage('Admin', 'Welcome to chat'));
     socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
     callback();
   });
 
-  socket.on('createMessage', (message, callback) => {
+  socket.on('openRoom', () => {
+    socket.emit('newMessage', generateMessage('Admin', 'Welcome to chat'));
+  })
+
+  socket.on('createMessage', (message) => {
     io.to(message.room).emit('newMessage', generateMessage(message.from, message.text));
   });
 
-  socket.on('disconnect', () => {    
-    io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left.`));
-  });
+  socket.on('disconnect', () => console.log('disconnected'));
 });
 
 server.listen(3000, () => {

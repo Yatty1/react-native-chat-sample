@@ -18,9 +18,7 @@ export default class ChatRoom extends React.Component {
     this.state = {
       messages: [],
     }
-    props.socket.emit('join', {room: props.room, name: props.name}, (error) => {
-      console.log(error);
-    });
+    props.socket.emit('openRoom');
     this._onNewMsg();
   }
 
@@ -33,7 +31,7 @@ export default class ChatRoom extends React.Component {
     }, () => {});
   }
 
-  _sendMessage() {
+  _sendMessage = () => {
     this.props.socket.emit('createMessage', {
       room: this.props.room,
       from: this.props.name,
@@ -43,13 +41,15 @@ export default class ChatRoom extends React.Component {
       this._scrollToBottom(50);
     });
   }
-  _renderName(name) {
+
+  _renderName = (name) => {
     return this.props.name !== name ? <Text style={{fontSize: 13, marginLeft: 5}}> {name} </Text> : null;
   }
-  _scrollToBottom(offset) {
+
+  _scrollToBottom = (offset) => {
     const scrollHeight = this.contentHeight - this.scrollViewHeight + offset;
     if (scrollHeight > 0) {
-      this.flatlist.scrollToOffset({ offset: scrollHeight, animated: true })
+      this.flatlist.scrollToOffset({ offset: scrollHeight, animated: true });
     }
   }
 
