@@ -4,6 +4,8 @@ const socketIO = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
+const { Users } = require('user');
+const users = new Users();
 
 const generateMessage = (from, text) => {
   return {
@@ -22,6 +24,8 @@ io.on('connection', (socket) => {
       return callback('Name and Room is required');
     }
     socket.join(params.room);
+    users.removeUser(socket.id);
+    users.addUser(socket.id, params.name, params.room);
     socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
     callback();
   });
@@ -31,10 +35,18 @@ io.on('connection', (socket) => {
   })
 
   socket.on('createMessage', (message) => {
-    io.to(message.room).emit('newMessage', generateMessage(message.from, message.text));
+    const user = users.getUser(socket.id);
+    if (user && isValidString(message.text)) {
+      io.to(user.room).emit('newMessage', generateMessage(user.name, message.text)); // emit to every sing user connected
+    }
   });
 
-  socket.on('disconnect', () => console.log('disconnected'));
+  socket.on('disconnect', () => {
+    const user = users.removeUser(socket.id);
+    if (user) {
+      io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left.`));
+    }
+  });
 });
 
 server.listen(3000, () => {
